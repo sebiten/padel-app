@@ -1,12 +1,10 @@
-"use client";
+"use client"
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, CreditCard, CheckCircle } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { Calendar, Clock, CreditCard, CheckCircle } from "lucide-react";
 
 interface Reserva {
   id: string;
@@ -36,20 +34,14 @@ interface PagoContentProps {
 
 export function PagoContent({ reserva, user }: PagoContentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-    console.log("Reserva obtenida:", reserva);
-    
+  const pago = reserva.pagos[0];
+
   const handlePago = async () => {
     setIsProcessing(true);
 
     try {
-      // Aquí integrarías con Mercado Pago
-      // Por ahora simulamos el pago
       console.log("Procesando pago para reserva:", reserva.id);
-
-      // Simular delay de procesamiento
       await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Redirigir a confirmación
       window.location.href = `/reserva/${reserva.id}/confirmacion`;
     } catch (error) {
       console.error("Error al procesar pago:", error);
@@ -58,7 +50,14 @@ export function PagoContent({ reserva, user }: PagoContentProps) {
     }
   };
 
-  const pago = reserva.pagos[0];
+  const formatFecha = (fecha: string) => {
+    return new Intl.DateTimeFormat("es-AR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date(fecha));
+  };
 
   if (pago?.estado === "aprobado") {
     return (
@@ -86,7 +85,6 @@ export function PagoContent({ reserva, user }: PagoContentProps) {
           </p>
         </div>
 
-        {/* Detalles de la Reserva */}
         <Card>
           <CardHeader>
             <CardTitle>Detalles de la Reserva</CardTitle>
@@ -98,7 +96,7 @@ export function PagoContent({ reserva, user }: PagoContentProps) {
                 <div>
                   <p className="text-sm text-muted-foreground">Fecha</p>
                   <p className="font-medium">
-                    {format(new Date(reserva.fecha), "PPP", { locale: es })}
+                    {formatFecha(reserva.fecha)}
                   </p>
                 </div>
               </div>
@@ -113,9 +111,7 @@ export function PagoContent({ reserva, user }: PagoContentProps) {
                 </div>
               </div>
 
-              <Badge className="font-medium ">
-                {reserva.canchas?.nombre}
-              </Badge>
+              <Badge className="font-medium">{reserva.canchas?.nombre}</Badge>
               <Badge variant="outline" className="text-xs">
                 {reserva.canchas?.tipo === "indoor" ? "Indoor" : "Outdoor"}
               </Badge>
@@ -126,21 +122,18 @@ export function PagoContent({ reserva, user }: PagoContentProps) {
               </div>
             </div>
 
-            {reserva.nombres_jugadores &&
-              reserva.nombres_jugadores.length > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Jugadores
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {reserva.nombres_jugadores.map((nombre, index) => (
-                      <Badge key={index} variant="outline">
-                        {nombre}
-                      </Badge>
-                    ))}
-                  </div>
+            {reserva.nombres_jugadores?.length > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Jugadores</p>
+                <div className="flex flex-wrap gap-2">
+                  {reserva.nombres_jugadores.map((nombre, index) => (
+                    <Badge key={index} variant="outline">
+                      {nombre}
+                    </Badge>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
             {reserva.notas && (
               <div>
@@ -151,7 +144,6 @@ export function PagoContent({ reserva, user }: PagoContentProps) {
           </CardContent>
         </Card>
 
-        {/* Resumen de Pago */}
         <Card>
           <CardHeader>
             <CardTitle>Resumen de Pago</CardTitle>

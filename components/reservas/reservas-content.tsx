@@ -1,69 +1,78 @@
-"use client";
+"use client"
 
-import React from "react";
-
-import { useState } from "react";
-import type { User } from "@supabase/supabase-js";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Clock, MapPin, Users, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import React from "react"
+import { useState } from "react"
+import type { User } from "@supabase/supabase-js"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { CalendarIcon, Clock, MapPin, Users, Loader2 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface Cancha {
-  id: string;
-  nombre: string;
-  numero: number;
-  tipo: string;
-  precio_hora: number;
-  precio_hora_pico: number;
-  descripcion: string;
+  id: string
+  nombre: string
+  numero: number
+  tipo: string
+  precio_hora: number
+  precio_hora_pico: number
+  descripcion: string
 }
 
 interface Horario {
-  id: string;
-  hora_inicio: string;
-  hora_fin: string;
-  es_hora_pico: boolean;
+  id: string
+  hora_inicio: string
+  hora_fin: string
+  es_hora_pico: boolean
 }
 
 interface ReservasContentProps {
-  user: User;
-  canchas: Cancha[];
-  horarios: Horario[];
+  user: User
+  canchas: Cancha[]
+  horarios: Horario[]
 }
 
-export function ReservasContent({
-  user,
-  canchas,
-  horarios,
-}: ReservasContentProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
-  );
-  const [selectedCancha, setSelectedCancha] = useState<Cancha | null>(null);
-  const [selectedHorario, setSelectedHorario] = useState<Horario | null>(null);
-  const [nombresJugadores, setNombresJugadores] = useState<string[]>([
-    "",
-    "",
-    "",
-    "",
-  ]);
-  const [notas, setNotas] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [horariosDisponibles, setHorariosDisponibles] =
-    useState<Horario[]>(horarios);
+// Utility functions to replace date-fns
+const formatFecha = (fecha: Date | string) => {
+  const date = typeof fecha === "string" ? new Date(fecha) : fecha
+  return new Intl.DateTimeFormat("es-AR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date)
+}
 
-  const router = useRouter();
-  const supabase = createClient();
+const formatDateForDisplay = (date: Date) => {
+  return new Intl.DateTimeFormat("es-AR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date)
+}
+
+const formatDateForDatabase = (date: Date) => {
+  return date.toISOString().split("T")[0] // YYYY-MM-DD format
+}
+
+export function ReservasContent({ user, canchas, horarios }: ReservasContentProps) {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [selectedCancha, setSelectedCancha] = useState<Cancha | null>(null)
+  const [selectedHorario, setSelectedHorario] = useState<Horario | null>(null)
+  const [nombresJugadores, setNombresJugadores] = useState<string[]>(["", "", "", ""])
+  const [notas, setNotas] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [horariosDisponibles, setHorariosDisponibles] = useState<Horario[]>(horarios)
+
+  const router = useRouter()
+  const supabase = createClient()
 
   // Verificar disponibilidad cuando cambia la fecha o cancha
   const verificarDisponibilidad = async (fecha: Date, canchaId: string) => {
@@ -72,45 +81,39 @@ export function ReservasContent({
         .from("reservas")
         .select("hora_inicio")
         .eq("cancha_id", canchaId)
-        .eq("fecha", format(fecha, "yyyy-MM-dd"))
-        .in("estado", ["pendiente", "confirmada"]);
+        .eq("fecha", formatDateForDatabase(fecha))
+        .in("estado", ["pendiente", "confirmada"])
 
-      const horariosOcupados =
-        reservasExistentes?.map((r) => r.hora_inicio) || [];
+      const horariosOcupados = reservasExistentes?.map((r) => r.hora_inicio) || []
 
-      const horariosLibres = horarios.filter(
-        (horario) => !horariosOcupados.includes(horario.hora_inicio)
-      );
+      const horariosLibres = horarios.filter((horario) => !horariosOcupados.includes(horario.hora_inicio))
 
-      setHorariosDisponibles(horariosLibres);
+      setHorariosDisponibles(horariosLibres)
 
       // Si el horario seleccionado ya no está disponible, deseleccionarlo
-      if (
-        selectedHorario &&
-        horariosOcupados.includes(selectedHorario.hora_inicio)
-      ) {
-        setSelectedHorario(null);
+      if (selectedHorario && horariosOcupados.includes(selectedHorario.hora_inicio)) {
+        setSelectedHorario(null)
       }
     } catch (error) {
-      console.error("Error al verificar disponibilidad:", error);
-      setHorariosDisponibles(horarios);
+      console.error("Error al verificar disponibilidad:", error)
+      setHorariosDisponibles(horarios)
     }
-  };
+  }
 
   // Efecto para verificar disponibilidad
   React.useEffect(() => {
     if (selectedDate && selectedCancha) {
-      verificarDisponibilidad(selectedDate, selectedCancha.id);
+      verificarDisponibilidad(selectedDate, selectedCancha.id)
     }
-  }, [selectedDate, selectedCancha]);
+  }, [selectedDate, selectedCancha])
 
   const handleReserva = async () => {
     if (!selectedDate || !selectedCancha || !selectedHorario) {
-      toast("Por favor completa todos los campos antes de continuar");
-      return;
+      toast("Por favor completa todos los campos antes de continuar")
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
       // 1. Validar que el horario sigue disponible
@@ -118,19 +121,19 @@ export function ReservasContent({
         .from("reservas")
         .select("id")
         .eq("cancha_id", selectedCancha.id)
-        .eq("fecha", format(selectedDate, "yyyy-MM-dd"))
+        .eq("fecha", formatDateForDatabase(selectedDate))
         .eq("hora_inicio", selectedHorario.hora_inicio)
         .in("estado", ["pendiente", "confirmada"])
-        .maybeSingle();
+        .maybeSingle()
 
       if (reservaExistente) {
-        toast("Horario no disponible, por favor selecciona otro");
-        await verificarDisponibilidad(selectedDate, selectedCancha.id);
-        return;
+        toast("Horario no disponible, por favor selecciona otro")
+        await verificarDisponibilidad(selectedDate, selectedCancha.id)
+        return
       }
 
       // 2. Calcular precio total
-      const precioTotal = getPrecio(selectedCancha, selectedHorario);
+      const precioTotal = getPrecio(selectedCancha, selectedHorario)
 
       // 3. Crear la reserva
       const { data: nuevaReserva, error: errorReserva } = await supabase
@@ -138,21 +141,19 @@ export function ReservasContent({
         .insert({
           usuario_id: user.id,
           cancha_id: selectedCancha.id,
-          fecha: format(selectedDate, "yyyy-MM-dd"),
+          fecha: formatDateForDatabase(selectedDate),
           hora_inicio: selectedHorario.hora_inicio,
           hora_fin: selectedHorario.hora_fin,
           precio_total: precioTotal,
           estado: "pendiente",
-          nombres_jugadores: nombresJugadores.filter(
-            (nombre) => nombre.trim() !== ""
-          ),
+          nombres_jugadores: nombresJugadores.filter((nombre) => nombre.trim() !== ""),
           notas: notas.trim() || null,
         })
         .select()
-        .single();
+        .single()
 
       if (errorReserva) {
-        throw errorReserva;
+        throw errorReserva
       }
 
       // 4. Crear registro de pago pendiente
@@ -161,48 +162,44 @@ export function ReservasContent({
         usuario_id: user.id,
         monto: precioTotal,
         estado: "pendiente",
-      });
+      })
 
       if (errorPago) {
         // Si falla el pago, eliminar la reserva
-        await supabase.from("reservas").delete().eq("id", nuevaReserva.id);
-        throw errorPago;
+        await supabase.from("reservas").delete().eq("id", nuevaReserva.id)
+        throw errorPago
       }
 
-      toast("¡Reserva creada!");
+      toast("¡Reserva creada!")
 
       // 5. Redirigir al pago (por ahora a una página de confirmación)
       setTimeout(() => {
-        router.push(`/reserva/${nuevaReserva.id}/pago`);
-      }, 1500);
+        router.push(`/reserva/${nuevaReserva.id}/pago`)
+      }, 1500)
     } catch (error) {
-      console.error("Error al crear reserva:", error);
+      console.error("Error al crear reserva:", error)
       toast("Error al crear la reserva")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const getPrecio = (cancha: Cancha, horario: Horario) => {
-    return horario.es_hora_pico && cancha.precio_hora_pico
-      ? cancha.precio_hora_pico
-      : cancha.precio_hora;
-  };
+    return horario.es_hora_pico && cancha.precio_hora_pico ? cancha.precio_hora_pico : cancha.precio_hora
+  }
 
   const updateJugador = (index: number, nombre: string) => {
-    const nuevosNombres = [...nombresJugadores];
-    nuevosNombres[index] = nombre;
-    setNombresJugadores(nuevosNombres);
-  };
+    const nuevosNombres = [...nombresJugadores]
+    nuevosNombres[index] = nombre
+    setNombresJugadores(nuevosNombres)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Hacer Reserva</h1>
-          <p className="text-muted-foreground">
-            Selecciona fecha, cancha y horario para tu reserva
-          </p>
+          <p className="text-muted-foreground">Selecciona fecha, cancha y horario para tu reserva</p>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -219,17 +216,12 @@ export function ReservasContent({
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                disabled={(date) =>
-                  date < new Date() ||
-                  date > new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                }
-                locale={es}
+                disabled={(date) => date < new Date() || date > new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)}
                 className="rounded-md border"
               />
               {selectedDate && (
                 <p className="mt-4 text-sm text-muted-foreground">
-                  Fecha seleccionada:{" "}
-                  {format(selectedDate, "PPP", { locale: es })}
+                  Fecha seleccionada: {formatDateForDisplay(selectedDate)}
                 </p>
               )}
             </CardContent>
@@ -249,30 +241,22 @@ export function ReservasContent({
                   <div
                     key={cancha.id}
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedCancha?.id === cancha.id
-                        ? "border-primary bg-primary/5"
-                        : "hover:border-primary/50"
+                      selectedCancha?.id === cancha.id ? "border-primary bg-primary/5" : "hover:border-primary/50"
                     }`}
                     onClick={() => setSelectedCancha(cancha)}
                   >
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-medium">{cancha.nombre}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Cancha #{cancha.numero}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Cancha #{cancha.numero}</p>
                         <Badge variant="outline" className="mt-1">
-                          {cancha.tipo === "indoor"
-                            ? "Cubierta"
-                            : "Descubierta"}
+                          {cancha.tipo === "indoor" ? "Cubierta" : "Descubierta"}
                         </Badge>
                       </div>
                       <div className="text-right">
                         <p className="font-medium">${cancha.precio_hora}</p>
                         {cancha.precio_hora_pico && (
-                          <p className="text-xs text-muted-foreground">
-                            Pico: ${cancha.precio_hora_pico}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Pico: ${cancha.precio_hora_pico}</p>
                         )}
                       </div>
                     </div>
@@ -292,9 +276,7 @@ export function ReservasContent({
             </CardHeader>
             <CardContent>
               {!selectedDate || !selectedCancha ? (
-                <p className="text-muted-foreground text-center py-8">
-                  Selecciona fecha y cancha primero
-                </p>
+                <p className="text-muted-foreground text-center py-8">Selecciona fecha y cancha primero</p>
               ) : (
                 <div className="space-y-2">
                   {horariosDisponibles.length === 0 ? (
@@ -306,9 +288,7 @@ export function ReservasContent({
                       <div
                         key={horario.id}
                         className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedHorario?.id === horario.id
-                            ? "border-primary bg-primary/5"
-                            : "hover:border-primary/50"
+                          selectedHorario?.id === horario.id ? "border-primary bg-primary/5" : "hover:border-primary/50"
                         }`}
                         onClick={() => setSelectedHorario(horario)}
                       >
@@ -323,9 +303,7 @@ export function ReservasContent({
                               </Badge>
                             )}
                           </div>
-                          <p className="font-medium">
-                            ${getPrecio(selectedCancha, horario)}
-                          </p>
+                          <p className="font-medium">${getPrecio(selectedCancha, horario)}</p>
                         </div>
                       </div>
                     ))
@@ -349,9 +327,7 @@ export function ReservasContent({
               <div className="grid md:grid-cols-2 gap-4">
                 {nombresJugadores.map((nombre, index) => (
                   <div key={index}>
-                    <Label htmlFor={`jugador-${index}`}>
-                      Jugador {index + 1}
-                    </Label>
+                    <Label htmlFor={`jugador-${index}`}>Jugador {index + 1}</Label>
                     <Input
                       id={`jugador-${index}`}
                       placeholder={`Nombre del jugador ${index + 1}`}
@@ -368,7 +344,7 @@ export function ReservasContent({
                   id="notas"
                   placeholder="Comentarios o solicitudes especiales..."
                   value={notas}
-                  onChange={(e: any) => setNotas(e.target.value)}
+                  onChange={(e) => setNotas(e.target.value)}
                   rows={3}
                 />
               </div>
@@ -387,9 +363,7 @@ export function ReservasContent({
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Fecha</p>
-                    <p className="font-medium">
-                      {format(selectedDate, "PPP", { locale: es })}
-                    </p>
+                    <p className="font-medium">{formatDateForDisplay(selectedDate)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Cancha</p>
@@ -407,9 +381,7 @@ export function ReservasContent({
 
                 {nombresJugadores.some((nombre) => nombre.trim() !== "") && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Jugadores
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-2">Jugadores</p>
                     <div className="flex flex-wrap gap-2">
                       {nombresJugadores
                         .filter((nombre) => nombre.trim() !== "")
@@ -425,18 +397,11 @@ export function ReservasContent({
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center">
                     <p className="text-lg font-medium">Total a pagar:</p>
-                    <p className="text-2xl font-bold text-primary">
-                      ${getPrecio(selectedCancha, selectedHorario)}
-                    </p>
+                    <p className="text-2xl font-bold text-primary">${getPrecio(selectedCancha, selectedHorario)}</p>
                   </div>
                 </div>
 
-                <Button
-                  onClick={handleReserva}
-                  className="w-full"
-                  size="lg"
-                  disabled={isLoading}
-                >
+                <Button onClick={handleReserva} className="w-full" size="lg" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -452,5 +417,5 @@ export function ReservasContent({
         )}
       </div>
     </div>
-  );
+  )
 }
