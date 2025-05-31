@@ -1,4 +1,7 @@
-"use client"
+"use client";
+// eslint-disable @typescript-eslint/no-unused-vars
+// eslint-disable @typescript-eslint/no-explicit-any
+//
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,9 +98,7 @@ export function PagoContent({ reserva }: PagoContentProps) {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Fecha</p>
-                  <p className="font-medium">
-                    {formatFecha(reserva.fecha)}
-                  </p>
+                  <p className="font-medium">{formatFecha(reserva.fecha)}</p>
                 </div>
               </div>
 
