@@ -38,17 +38,6 @@ interface ReservasContentProps {
   horarios: Horario[]
 }
 
-// Utility functions to replace date-fns
-const formatFecha = (fecha: Date | string) => {
-  const date = typeof fecha === "string" ? new Date(fecha) : fecha
-  return new Intl.DateTimeFormat("es-AR", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date)
-}
-
 const formatDateForDisplay = (date: Date) => {
   return new Intl.DateTimeFormat("es-AR", {
     weekday: "long",

@@ -32,7 +32,7 @@ interface PagoContentProps {
   user: User;
 }
 
-export function PagoContent({ reserva, user }: PagoContentProps) {
+export function PagoContent({ reserva }: PagoContentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const pago = reserva.pagos[0];
 
