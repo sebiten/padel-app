@@ -8,6 +8,9 @@ import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
 import { hasEnvVars } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+import { Calendar, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Navbar from "@/components/navBar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -33,25 +36,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"} className="text-xl font-bold text-primary">
-                🎾 PadelReservas
-              </Link>
-              <Link href={"/reservas"} className="hover:text-primary">
-                Reservas
-              </Link>
-              <Link href={"/"} className="hover:text-primary">
-                Inicio
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <ThemeSwitcher />
-              {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
-            </div>
-          </div>
-        </nav>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

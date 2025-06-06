@@ -1,13 +1,12 @@
 "use client";
-// eslint-disable @typescript-eslint/no-unused-vars
-// eslint-disable @typescript-eslint/no-explicit-any
-//
+
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, CreditCard, CheckCircle } from "lucide-react";
+import { Calendar, Clock, CreditCard, CheckCircle, Loader2 } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
 
 interface Reserva {
   id: string;
@@ -37,17 +36,43 @@ interface PagoContentProps {
 
 export function PagoContent({ reserva }: PagoContentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
   const pago = reserva.pagos[0];
 
   const handlePago = async () => {
     setIsProcessing(true);
 
     try {
-      console.log("Procesando pago para reserva:", reserva.id);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      window.location.href = `/reserva/${reserva.id}/confirmacion`;
+      // Llamar a la API para crear el pago
+      const response = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reservaId: reserva.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al crear el pago");
+      }
+
+      // Redirigir a Mercado Pago
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        throw new Error("No se recibió el link de pago");
+      }
     } catch (error) {
       console.error("Error al procesar pago:", error);
+      toast({
+        title: "Error al procesar pago",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -163,12 +188,21 @@ export function PagoContent({ reserva }: PagoContentProps) {
 
             <Button
               onClick={handlePago}
-              className="w-full mt-6"
               size="lg"
+              className="mt-4 w-full"
               disabled={isProcessing}
             >
-              <CreditCard className="mr-2 h-4 w-4" />
-              {isProcessing ? "Procesando..." : "Pagar con Mercado Pago"}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Pagar con Mercado Pago
+                </>
+              )}
             </Button>
 
             <p className="text-xs text-muted-foreground text-center mt-4">
