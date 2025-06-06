@@ -5,8 +5,13 @@ import type { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, CreditCard, CheckCircle, Loader2 } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import {
+  Calendar,
+  Clock,
+  CreditCard,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 
 interface Reserva {
   id: string;
@@ -36,7 +41,6 @@ interface PagoContentProps {
 
 export function PagoContent({ reserva }: PagoContentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
   const pago = reserva.pagos[0];
 
   const handlePago = async () => {
@@ -68,11 +72,7 @@ export function PagoContent({ reserva }: PagoContentProps) {
       }
     } catch (error) {
       console.error("Error al procesar pago:", error);
-      toast({
-        title: "Error al procesar pago",
-        description: error instanceof Error ? error.message : "Ocurrió un error inesperado",
-        variant: "destructive",
-      });
+      alert("Error al procesar pago");
     } finally {
       setIsProcessing(false);
     }
